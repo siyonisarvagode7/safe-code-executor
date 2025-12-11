@@ -1,146 +1,174 @@
- Safe Code Executor (Python + Docker Sandbox)
+Safe Python Executor
 
-A secure sandbox system that executes untrusted Python code inside a restricted Docker container.  
-Designed for learning container security, resource isolation, and secure API design.
-
----
+A secure Python execution environment built using Flask, AST-based sandboxing, and Docker container isolation.
+This project ensures that untrusted Python code executes safely, with strict restrictions and strong security boundaries.
 
  Features
+1. AST-Level Code Sandboxing
 
- Secure Python Code Execution
-User-submitted Python runs safely inside a Docker container using:
-- Timeout control
-- Memory limits
-- No filesystem write access
-- No network connectivity
-- Limited process count
-- Dropped Linux capabilities
+Before execution, your server parses user code using Python’s ast module and blocks dangerous operations such as:
 
- REST API (Flask)
-Endpoint:
-POST /run
+import statements
+
+open, exec, eval, compile
+
+os, sys, socket, shutil, ctypes
+
+Attribute access like os.system, sys.modules
+
+This prevents harmful code even before Docker executes it.
+
+2. Docker Container Isolation
+
+Every execution runs inside a temporary Docker container:
+
+Protection	Value
+Filesystem	Read-only
+Memory	128MB
+CPU	0.5
+PIDs	64
+Network	Disabled
+Storage	Tmpfs /tmp only
+
+If the container hangs, it is automatically killed.
+
+3. Output Modes
+
+Your API supports two response formats:
+
+ JSON Mode (Default)
 {
-"code": "print(2+2)"
+  "exit_code": 0,
+  "stdout": "Hello World\n",
+  "stderr": ""
 }
 
+ Raw Mode (/run?raw=1)
 
-Response:
+Outputs plain text:
 
+Hello World
 
-{
-"status": "ok",
-"output": "4\n",
-"error": ""
-}
+4. Web User Interface
 
- Web UI
-A simple HTML client for running code directly from browser.
+A clean HTML + CSS UI is included:
 
+Code editor textarea
 
- Security Measures
+Run button
 
-| Risk | Mitigation | Implementation |
-|------|------------|----------------|
-| Infinite loops | Force-stop after 10 sec | `timeout=10` |
-| Memory bombs | Limit container memory | `--memory=128m` |
-| Fork bombs | Limit processes | `--pids-limit=64` |
-| Network attacks | Disable networking | `--network=none` |
-| Filesystem writes | Read-only filesystem | `--read-only` |
-| Privilege escalation | Drop capabilities | `--cap-drop=ALL` |
-| Container breakout | No mounts / isolated fs | No `-v` used |
+Dark-themed output console
 
-This closely resembles how REPL, LeetCode, and Judge0 sandboxes work.
+Works seamlessly with the API
 
+5. Full Error Handling
+
+Syntax validation
+
+Timeout handling
+
+Docker runtime errors
+
+Rejected unsafe code
+
+Truncated large outputs
 
  Project Structure
-safe-code-executor/
-│
-├── app.py # Flask API server
-├── index.html # Web UI
-├── requirements.txt # Python dependencies
-├── .gitignore
-└── README.md # Documentation
+safe-executor/
+│── app.py              # Flask backend
+│── requirements.txt    # Dependencies
+│── templates/
+│     └── index.html    # Web interface
+│── .venv/              # Virtual environment
 
- Setup Instructions
+ Installation & Setup
+1️ Clone the project
+git clone <your_repo_url>
+cd safe-executor
 
- 1. Create virtual environment
+2️ Create virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
 
-python3 -m venv venv
-source venv/bin/activate
-
-
- 2. Install dependencies
-
-
+3️ Install dependencies
 pip install -r requirements.txt
 
-
- 3. Run the server
-
-
+4️ Run the server
 python app.py
 
 
-Server runs on:
+Server available at:
 
+ http://127.0.0.1:5000
 
-http://127.0.0.1:5000
+ API Usage
+JSON Mode
+curl -X POST "127.0.0.1:5000/run" \
+-H "Content-Type: application/json" \
+-d '{"code":"print(\"Hello World\")"}'
 
+Raw Output Mode
+curl -X POST "127.0.0.1:5000/run?raw=1" \
+-H "Content-Type: application/json" \
+-d '{"code":"print(\"Hello World\")"}'
 
- Security Test Cases
+ Security Measures
+ AST sandbox blocks:
 
- Timeout test
+Imports
 
+Dangerous built-ins
 
-while True:
-pass
+Dangerous modules
 
- `status: timeout`
+File access
 
- Memory limit test
+Network access
 
+Attribute chains
 
-x = "a" * 1000000000
+ Docker provides:
 
- `status: runtime_error`
+Full OS-level isolation
 
- Network disabled test
+No persistent storage
 
+No external networking
 
-import socket
-socket.gethostbyname("google.com")
+Low memory / CPU limits
 
- DNS failure
+ Server enforces:
 
- Read-only filesystem test
+Max code length
 
+Max output length
 
-open("/tmp/test.txt", "w").write("hello")
+Timeout kill
 
- `Read-only file system`
+Clean error responses
 
- Filesystem isolation test
-
-
-open("/etc/passwd").read()
-
- Shows *container’s* file, NOT host’s
 
  What I Learned
 
-- How Docker isolates processes, memory, and filesystem.
-- Why executing untrusted code is dangerous.
-- How resource limits prevent DoS attacks.
-- Difference between container and host filesystem.
-- Importance of dropping Linux capabilities.
-- Real-world sandboxing techniques used by online judge systems.
+How sandboxing works using Python AST
 
- Possible Improvements
+How Docker isolates untrusted code
 
-- Add support for Node.js, Java, C++
-- Add multi-file upload (.zip)
-- Add syntax highlighting (CodeMirror)
-- Add rate limiting / user accounts
-- Add database for execution logs
-- Use gVisor / Firecracker for stronger security
-- Deploy with Docker Compose
+How to design secure execution pipelines
+
+Flask API design with JSON & Raw modes
+
+Building a clean UI for code execution
+
+Real-world error handling and resource limits
+
+ Final Statement
+
+This project shows a complete secure execution pipeline using:
+
+➡ AST security
+➡ Docker containerization
+➡ Flask backend
+➡ Web UI
+
+It is reliable, safe, and demonstrates strong understanding of secure system design.
