@@ -166,9 +166,9 @@ Real-world error handling and resource limits
 
 This project shows a complete secure execution pipeline using:
 
-➡ AST security
-➡ Docker containerization
-➡ Flask backend
-➡ Web UI
+ AST security
+ Docker containerization
+ Flask backend
+ Web UI
 
 It is reliable, safe, and demonstrates strong understanding of secure system design.
